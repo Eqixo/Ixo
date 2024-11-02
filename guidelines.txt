@@ -1,0 +1,39 @@
+Ixo programming language
+
+Syntax: Simpler than Python, more 
+Type System: Dynamically typed, with an option to statically type
+Memory Management: Default garbage collection, with optional fine-tuning for performance-critical code
+Performance: Very performant, with a focus on optimizing for common use cases
+Concurrency: Support for concurrent programming, with a focus on safety and ease of use
+Standard Library: Powerful default functions, with the ability to add libraries and frameworks
+
+Syntax
+
+Removing colons in statements
+Replacing the def keyword by func for function definitions
+Making types of functions implicit (if there's no return, it's a void, return int, it's an int ... etc ...)
+Simplifying simple arithmetic operations (e.g. x + y, x - y, etc.)
+
+Type System
+
+Making types implicit, but allowing for explicit specification if needed
+Implementing type inference, which allows the language to infer the types of variables and function return values based on their usage
+We established that the type system would be a language feature, rather than a separate compiler flag or runtime option.
+
+Memory Management
+
+Manually clearing pointers that are not in use to prevent memory leaks
+Caching data to improve performance
+Runtime profiling to identify performance bottlenecks and optimize memory usage
+Just-In-Time (JIT) compilation to improve performance
+Established that the memory management system would be designed to provide a balance between performance and safety.
+
+Concurrency
+
+Providing a general-purpose API for concurrent programming, including synchronization primitives, task scheduling, and communication between tasks
+Focusing on safety and ease of use, while still providing high-performance concurrency capabilities
+
+Standard Library
+
+Providing many math functions, vectors, matrixes, and other useful data structures and algorithms, similar to the C++ standard library
+Allowing for the addition of libraries and frameworks to extend the language's capabilities

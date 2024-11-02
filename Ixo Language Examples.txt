@@ -1,0 +1,174 @@
+# Ixo Language Examples :
+
+# One-line Commentary
+
+"""
+    Multi-Line Commentary
+"""
+
+# Defining a function
+
+func foo()
+
+# Defining a class
+
+class myclass()
+
+# Parameters inside a function
+
+func foo(a, b)
+
+"""
+  Enforce input/output type of function (keep in mind that it is not necessary, here for hardcoding) :
+  Adding a type will require a return statement
+  - number: byte, short, int, float, double, complex (for complex numbers only : i or j)
+  - string: str, char
+  - boolean: bool
+  - tuple: tuple
+  - list: list
+  - dictionary: dict
+"""
+
+func foo(variable: type): type
+
+# Examples :
+
+func foo(a: float, b: int): int
+    # Some commands
+    return int
+
+func foo(a, b): str
+    return "Hello World"
+
+func foo(a, b): bool
+    return true # Or false
+
+func foo(a, b): tuple[int, char, dict]
+    return [x, 'y', {"name": z, "value": 3}]
+
+func foo(a, b): list # Or use dict for a dictionary
+    return [x1, y1, x2, y2]
+
+"""
+    Conditions:
+    - if/elif/else
+    - while/case/break/switch
+    - for
+    - do/while
+    - with
+    - try/except
+"""
+
+func foo(a, b)
+    if condition
+        # Execute some commands
+    # elif or else depending on the outcome (but can be omitted)
+
+# When you only have one command after a condition, you can write :
+
+func foo(a, b)
+    if condition -> # Command here
+        # Or Command here
+
+func foo(a, b)
+    while condition
+        # Execute some commands
+    # Can add an else statement to execute after the loop is finished
+
+func foo(a, b)
+    for i in [min, max], step       # (min and max included)
+        # Execute some commands
+    # Can add an else statement to execute after the loop is finished
+
+func foo(a, b)
+    switch condition
+        case a
+            # Execute some commands
+            break
+        case b
+            # Execute some commands
+            break
+        default
+            # Execute some commands
+
+func foo(a, b)
+    do
+        # Execute some commands
+    while condition
+
+func foo(a, b)
+    with condition
+        # Execute some commands
+
+func foo(a, b)
+    try
+        # Execute some commands
+    except error_type
+        # Execute some commands
+
+"""
+    Operators
+
+    Arithmetic operators
+    - a++
+    - a--
+    - a**           # a * a
+    - a//           # sqrt(a)
+    - |a|           # abs(a)
+    - a + b
+    - a - b
+    - a * b
+    - a / b
+    - a % b
+    - a ** b
+
+    Relational operators
+    - a in b        or : a ~ b
+    - a not in b    or : a !~ b
+    - a equal b     or : a == b
+    - a diff b      or : a != b
+    - a < b
+    - a <= b
+    - a > b
+    - a >= b
+
+    Logical operators
+    - a and b       or : a && b
+    - a or b        or : a || b
+    - not           or : ! (inverts the output)
+
+    Assignment operators
+    - a = b
+    - a += b
+    - a -= b
+    - a *= b
+    - a /= b
+    - a %= b
+    - a **= b
+
+    Bitwise operators
+    - a & b
+    - a | b
+    - a ^ b
+    - a << b
+    - a >> b
+
+    Identity operators
+    - a === b
+    - a !== b
+
+"""
+
+# Main Example
+
+class example()
+
+    func example_function(a, b)
+        if a >= b -> return a **= b
+
+        while a <= b -> a++
+
+    func hardcoded_example_function(a: int, b: int): int
+        if a >= b -> return a **= b
+
+        while a <= b -> a++
