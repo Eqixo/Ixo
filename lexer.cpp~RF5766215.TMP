@@ -1,0 +1,133 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include <cctype>
+
+enum class TokenType {
+    START, END, COMMENT, KEYWORD, TYPE, IDENTIFIER, OPERATOR, NUMBER, STRING, DELIMITER, PUNCTUATION, NEWLINE, UNKNOWN
+};
+
+std::unordered_map<TokenType, std::string> tokenTypeStrings = {
+    {TokenType::START, "START"}, {TokenType::END, "END"}, {TokenType::COMMENT, "COMMENT"}, {TokenType::NEWLINE, "NEWLINE"},
+    {TokenType::KEYWORD, "KEYWORD"}, {TokenType::TYPE, "TYPE"}, {TokenType::IDENTIFIER, "IDENTIFIER"},
+    {TokenType::OPERATOR, "OPERATOR"}, {TokenType::NUMBER, "NUMBER"}, {TokenType::STRING, "STRING"},
+    {TokenType::DELIMITER, "DELIMITER"}, {TokenType::PUNCTUATION, "PUNCTUATION"}, {TokenType::UNKNOWN, "UNKNOWN"}
+};
+
+struct Token {
+    TokenType type;
+    std::string value;
+};
+
+class Lexer {
+public:
+    Lexer(const std::string& input) : input(input), position(0) {}
+
+    std::vector<Token> tokenize() {
+        std::vector<Token> tokens;
+        while (position < input.length()) {
+            char currentChar = input[position];
+            if (currentChar == '#') tokens.push_back(consumeComment());
+            else if (isalpha(currentChar)) tokens.push_back(consumeTypeOrIdentifier());
+            else if (isdigit(currentChar) || currentChar == '.') tokens.push_back(consumeNumber());
+            else if (currentChar == '"' || currentChar == '\'') tokens.push_back(consumeString());
+            else if (strchr("()[]", currentChar)) tokens.push_back(consumeDelimiter());
+            else if (strchr("{}", currentChar)) tokens.push_back(consumeBlock());
+            else if (strchr(":,;", currentChar)) tokens.push_back(consumePunctuation());
+            else if (currentChar == ' ' || currentChar == '\t' || currentChar == '\n') position++;
+            else tokens.push_back(consumeOperator());
+        }
+        return tokens;
+    }
+
+private:
+    std::string input;
+    size_t position;
+
+    Token consumeComment() {
+        size_t startPos = position++;
+        while (position < input.length() && input[position] != '\n') position++;
+        return { TokenType::COMMENT, input.substr(startPos, position - startPos) };
+    }
+
+    Token consumeTypeOrIdentifier() {
+        size_t startPos = position++;
+        while (position < input.length() && (isalnum(input[position]) || input[position] == '_')) position++;
+        std::string value = input.substr(startPos, position - startPos);
+        TokenType type = keywords.count(value) ? TokenType::KEYWORD : types.count(value) ? TokenType::TYPE : TokenType::IDENTIFIER;
+        return { type, value };
+    }
+
+    Token consumeNumber() {
+        size_t startPos = position++;
+        while (position < input.length() && (isdigit(input[position]) || input[position] == '.')) position++;
+        return { TokenType::NUMBER, input.substr(startPos, position - startPos) };
+    }
+
+    Token consumeString() {
+        char quoteType = input[position++];
+        size_t startPos = position;
+        while (position < input.length() && input[position] != quoteType) position++;
+        position++;
+        return { TokenType::STRING, input.substr(startPos, position - startPos) };
+    }
+
+    Token consumeDelimiter() {
+        return { TokenType::DELIMITER, std::string(1, input[position++]) };
+    }
+
+    Token consumeBlock() {
+        return { input[position++] == '{' ? TokenType::START : TokenType::END, std::string(1, input[position - 1]) };
+    }
+
+    Token consumePunctuation() {
+        return { TokenType::PUNCTUATION, std::string(1, input[position++]) };
+    }
+
+    Token consumeOperator() {
+        return { TokenType::OPERATOR, std::string(1, input[position++]) };
+    }
+
+    std::unordered_map<std::string, TokenType> keywords = {
+        {"fn", TokenType::KEYWORD}, {"class", TokenType::KEYWORD}, {"return", TokenType::KEYWORD},
+        {"if", TokenType::KEYWORD}, {"else", TokenType::KEYWORD}, {"while", TokenType::KEYWORD},
+        {"for", TokenType::KEYWORD}, {"switch", TokenType::KEYWORD}, {"case", TokenType::KEYWORD},
+        {"default", TokenType::KEYWORD}, {"do", TokenType::KEYWORD}, {"with", TokenType::KEYWORD},
+        {"try", TokenType::KEYWORD}, {"except", TokenType::KEYWORD}, {"in", TokenType::KEYWORD},
+        {"not", TokenType::KEYWORD}, {"and", TokenType::KEYWORD}, {"or", TokenType::KEYWORD}
+    };
+
+    std::unordered_map<std::string, TokenType> types = {
+        {"int", TokenType::TYPE}, {"float", TokenType::TYPE}, {"str", TokenType::TYPE},
+        {"bool", TokenType::TYPE}, {"tuple", TokenType::TYPE}, {"list", TokenType::TYPE},
+        {"dict", TokenType::TYPE}
+    };
+};
+
+int main() {
+        std::string input = R"(
+            # Ixo Language Examples
+            fn foo(a: int, b: int): int {
+                a += b
+
+                if a > 0 {
+                    return a
+                } else {
+                    b**
+                    return b
+                }
+            }
+        )";
+
+        Lexer lexer(input);
+        std::vector<Token> tokens = lexer.tokenize();
+
+        std::cout << "Lexer Tokens: " << std::endl;
+        for (const auto& token : tokens) {
+            std::cout << "Type: " << tokenTypeStrings[token.type] << " Value: " << token.value << std::endl;
+        }
+
+        return 0;
+    }
+

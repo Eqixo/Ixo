@@ -1,0 +1,331 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <regex>
+#include <unordered_map>
+
+/*
+ TokenType is an enumeration that defines different types of tokens
+ that can be identified by the Lexer.
+ */
+enum class TokenType {
+    START,           /*!< The start of a function, a class, or a statement */
+    END,             /*!< The end of a function, a class, or a statement */
+    COMMENT,         /*!< A line comment */
+    KEYWORD,         /*!< A keyword, such as "func" or "class" */
+    TYPE,            /*!< A type, such as "int" or "float" */
+    IDENTIFIER,      /*!< An identifier, such as a variable name*/
+    OPERATOR,        /*!< An operator, such as "+" or "-" */
+    NUMBER,          /*!< A number, such as 1 or 3.14 */
+    STRING,          /*!< A string, such as "hello" */
+    DELIMITER,       /*!< A delimiter character, such as "(" or ")" */
+    PUNCTUATION,     /*!< A punctuation character, such as ":" or "," */
+    UNKNOWN          /*!< An unknown token */
+};
+
+std::unordered_map<TokenType, std::string> tokenTypeStrings = {
+    {TokenType::START,           "START           "},
+    {TokenType::END,             "END             "},
+    {TokenType::COMMENT,         "COMMENT         "},
+    {TokenType::KEYWORD,         "KEYWORD         "},
+    {TokenType::TYPE,            "TYPE            "},
+    {TokenType::IDENTIFIER,      "IDENTIFIER      "},
+    {TokenType::OPERATOR,        "OPERATOR        "},
+    {TokenType::NUMBER,          "NUMBER          "},
+    {TokenType::STRING,          "STRING          "},
+    {TokenType::DELIMITER,       "DELIMITER       "},
+    {TokenType::PUNCTUATION,     "PUNCTUATION     "},
+    {TokenType::UNKNOWN,         "UNKNOWN         "}
+};
+
+/*
+ Token represents a lexical token with a specific type and value.
+
+ The type field is an enumeration of the different types of tokens
+ that can be identified by the Lexer.
+
+ The value field is a string that represents the value of the token.
+ */
+struct Token {
+    TokenType type;  /*!< The type of the token */
+    std::string value; /*!< The value of the token */
+};
+
+/*
+ Lexer is a simple lexical analyzer that tokenizes an input string into a sequence of tokens.
+
+ The Lexer class takes an input string as a parameter to its constructor.
+
+ The tokenize method returns a vector of tokens, which are the result of tokenizing the input string.
+ */
+class Lexer {
+public:
+    /*
+     Constructs a Lexer with the given input string.
+
+     @param input The input string to tokenize.
+     */
+    Lexer(const std::string& input) : input(input), position(0) {}
+
+    /*
+     Tokenizes the input string into a vector of tokens.
+
+     @return A vector of tokens.
+     */
+    std::vector<Token> tokenize() {
+        std::vector<Token> tokens;
+        while (position < input.length()) {
+            char currentChar = input[position];
+            if (currentChar == '#') { // If the current character is a hash
+                tokens.push_back(consumeComment());
+            }
+            else if (isalpha(currentChar)) { // If the current character is a letter
+                tokens.push_back(consumeTypeOrIdentifier());
+            }
+            else if (isdigit(currentChar) || currentChar == '.') { // If the current character is a digit or a decimal point
+                tokens.push_back(consumeNumber());
+            }
+            else if (currentChar == '"' || currentChar == '\'') { // If the current character is a quote
+                tokens.push_back(consumeString());
+            }
+            else if (currentChar == '(' || currentChar == ')' || currentChar == '[' || currentChar == ']') {
+                tokens.push_back(consumeDelimiter());
+            }
+            else if (currentChar == '{' || currentChar == '}') {
+                if (currentChar == '{') {
+                    tokens.push_back({ TokenType::START, "{" });
+                }
+                else {
+                    tokens.push_back({ TokenType::END, "}" });
+                    position++;
+                }
+            }
+            else if (currentChar == ':' || currentChar == ',' || currentChar == ';') {
+                tokens.push_back(consumePunctuation());
+            }
+            else { // If none of the above conditions are true
+                tokens.push_back(consumeOperator());
+            }
+        }
+        return tokens;
+    }
+
+private:
+    std::string input; /*!< The input string being tokenized */
+    size_t position; /*!< The current position in the input string */
+
+    /*
+     Consumes a comment token from the input.
+
+     A comment is defined as any text starting with a hash (#) and continuing until the end of the line.
+     The comment is consumed by reading until the end of the line is reached.
+     The position is then moved to the character after the newline character.
+     The consumed comment token is then created with the type of COMMENT and the value of the comment.
+
+     @return The consumed comment token.
+     */
+    Token consumeComment() {
+        size_t startPos = position;
+        // Read until the end of the line is reached
+        while (position < input.length() && input[position] != '\n') {
+            position++;
+        }
+        // Create a token with the type of COMMENT and the value of the comment
+        return { TokenType::COMMENT, input.substr(startPos, position - startPos) };
+    }
+
+    /*
+     Consumes an identifier or keyword or type token from the input.
+
+     An identifier is defined as any sequence of alphanumeric characters or underscores.
+     A keyword is defined as any of the following words: "fn", "class", "return", "if", "else", "while", "for", "switch", "case", "default", "do", "with", "try", "except", "in", "not", "and", "or".
+     A type is defined as any of the following words: "int", "float", "string", "bool", "tuple", "list", "dict".
+     The type of the token is determined by whether the value is in the keywords or type map.
+     If it is, the type is KEYWORD, or TYPE, otherwise it is IDENTIFIER.
+     The consumed identifier or keyword token is then created with the determined type and value.
+
+     @return The consumed identifier or keyword token.
+     */
+    Token consumeTypeOrIdentifier() {
+        size_t startPos = position;
+        // Read until the end of the identifier is reached
+        while (position < input.length() && (isalnum(input[position]) || input[position] == '_')) {
+            position++;
+        }
+        // Determine the type of the token
+        std::string value = input.substr(startPos, position - startPos);
+
+        TokenType type = (types.find(value) != types.end() || keywords.find(value) != keywords.end()) ? (keywords.find(value) != keywords.end() ? TokenType::KEYWORD : TokenType::TYPE) : TokenType::IDENTIFIER;
+        // Create a token with the determined type and value
+        return { type, value };
+    }
+
+    /*
+     Consumes a number token from the input.
+
+     A number is defined as any sequence of digits or a decimal point.
+     The number is consumed by reading until the end of the number is reached.
+     The consumed number token is then created with the type of NUMBER and the value of the number.
+
+     @return The consumed number token.
+     */
+    Token consumeNumber() {
+        size_t startPos = position;
+        // Read until the end of the number is reached
+        while (position < input.length() && (isdigit(input[position]) || input[position] == '.')) {
+            position++;
+        }
+        // Create a token with the type of NUMBER and the value of the number
+        return { TokenType::NUMBER, input.substr(startPos, position - startPos) };
+    }
+
+    /*
+     Consumes a string token from the input.
+
+     A string is defined as any sequence of characters enclosed in single or double quotes.
+     The string is consumed by reading until the end of the string is reached.
+     The consumed string token is then created with the type of STRING and the value of the string.
+
+     @return The consumed string token.
+     */
+    Token consumeString() {
+        char quoteType = input[position++];
+        size_t startPos = position;
+        // Read until the end of the string is reached
+        while (position < input.length() && input[position] != quoteType) {
+            position++;
+        }
+        position++;
+        position++; // Consume closing quote
+        // Create a token with the type of STRING and the value of the string
+        return { TokenType::STRING, input.substr(startPos, position - startPos) };
+    }
+
+    /*
+     Consumes a delimiter token from the input.
+
+     An delimiter token is defined as a single character that is parentheses '()' or brackets '[]'.
+     The delimiter token is consumed by reading the next character.
+     The consumed delimiter token is then created with the type of DELIMITER and the value of the delimiter.
+
+     @return The consumed delimiter token.
+     */
+    Token consumeDelimiter() {
+        std::string value(1, input[position++]);
+        return { TokenType::DELIMITER, value };
+    }
+
+    /*
+     Consumes a punctuation token from the input.
+
+     An punctuation token is defined as a single character that is colons ':', commas ',' or semicolons ';'.
+     The punctuation token is consumed by reading the next character.
+     The consumed punctuation token is then created with the type of PUNCTUATION and the value of the punctuation.
+
+     @return The consumed punctuation token.
+     */
+    Token consumePunctuation() {
+        std::string value(1, input[position++]);
+        // Create a token with the type of OPERATOR and the value of the operator or punctuation
+        return { TokenType::PUNCTUATION, value };
+    }
+
+    /*
+     Consumes an operator token from the input.
+
+     An operator token is defined as any single character that is not a letter, digit, or whitespace.
+     The operator token is consumed by reading the next character.
+     The consumed operator token is then created with the type of OPERATOR and the value of the operator.
+
+     @return The consumed operator token.
+     */
+    Token consumeOperator() {
+        std::string value(1, input[position++]);
+        // Create a token with the type of OPERATOR and the value of the operator or punctuation
+        return { TokenType::OPERATOR, value };
+    }
+
+    // Define a map that associates keyword strings with their corresponding token types
+    std::unordered_map<std::string, TokenType> keywords = {
+        // Each entry maps a keyword to the TokenType::KEYWORD enumeration
+        {"fn", TokenType::KEYWORD},      // Keyword for defining a function
+        {"class", TokenType::KEYWORD},   // Keyword for defining a class
+        {"return", TokenType::KEYWORD},  // Keyword for returning a value from a function
+        {"if", TokenType::KEYWORD},      // Keyword for conditional execution
+        {"else", TokenType::KEYWORD},    // Keyword for an alternative branch in conditionals
+        {"while", TokenType::KEYWORD},   // Keyword for looping while a condition is true
+        {"for", TokenType::KEYWORD},     // Keyword for iterating over a range or collection
+        {"switch", TokenType::KEYWORD},  // Keyword for multi-way branching
+        {"case", TokenType::KEYWORD},    // Keyword for a case in a switch statement
+        {"default", TokenType::KEYWORD}, // Keyword for the default case in a switch statement
+        {"do", TokenType::KEYWORD},      // Keyword for executing a block at least once in a loop
+        {"with", TokenType::KEYWORD},    // Keyword for resource management
+        {"try", TokenType::KEYWORD},     // Keyword for exception handling
+        {"except", TokenType::KEYWORD},  // Keyword for catching exceptions
+        {"in", TokenType::KEYWORD},      // Keyword for membership testing
+        {"not", TokenType::KEYWORD},     // Keyword for logical negation
+        {"and", TokenType::KEYWORD},     // Keyword for logical conjunction
+        {"or", TokenType::KEYWORD}       // Keyword for logical disjunction
+    }; // A map of keywords to their corresponding token types
+
+    std::unordered_map<std::string, TokenType> types = {
+        // Each entry maps a keyword to the TokenType::TYPE enumeration
+        {"int", TokenType::TYPE},     // Keyword for integer type
+        {"float", TokenType::TYPE},   // Keyword for floating-point type
+        {"str", TokenType::TYPE},     // Keyword for string type
+        {"bool", TokenType::TYPE},    // Keyword for boolean type
+        {"tuple", TokenType::TYPE},   // Keyword for tuple type
+        {"list", TokenType::TYPE},    // Keyword for list type
+        {"dict", TokenType::TYPE},    // Keyword for dictionary type
+    };
+};
+
+/*
+ The main function is the entry point of the program.
+
+ This function tests the lexer by tokenizing the given input string and
+ printing the tokens to the console.
+
+ The input string is a simple Ixo language program that defines a function
+ and returns a value.
+
+ The program uses the Lexer class to tokenize the input string and then
+ iterates over the tokens, printing their types and values to the console.
+
+ The output of the program should be a list of tokens, where each token is
+ represented as a pair of type and value.
+ */
+int main() {
+    std::string input = R"(
+        # Ixo Language Examples
+        fn foo(a: int, b: int): int {
+            a += b
+
+            if a > 0 {
+				return a
+            } else {
+			    b**
+                return b
+            }
+		}
+        
+    )";
+
+    // Create a lexer and tokenize the input string
+    Lexer lexer(input);
+    std::vector<Token> tokens = lexer.tokenize();
+
+    /*
+     Iterate over the tokens and print their types and values to the console
+     The type of each token is represented as an integer, which is the
+     enumeration value of the TokenType enum. The value of each token is
+     the string of characters that make up the token.
+    */
+    std::cout << "Lexer Tokens: " << std::endl;
+
+    for (const auto& token : tokens) {
+        std::cout << "Type: " << tokenTypeStrings[token.type] << "Value: " << token.value << std::endl;
+    }
+
+    return 0;
+}
